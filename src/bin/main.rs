@@ -1,7 +1,7 @@
 /*
  * This code is for testing basic button input on an ESP32c6.
- * Currently, it is set up to react to a single button, connected
- * to GPIO4.
+ * Currently, it is hardcoded to react to two buttons, connected
+ * to GPIO4 (red) and GPIO5 (blue).
  */
 
 #![no_std]
@@ -36,61 +36,77 @@ use smart_leds::{brightness, gamma, SmartLedsWrite, RGB8};
 
 /* 
  * The `main` function initializes the hardware peripherals,
- * sets up a button and enters an infinite loop where it checks
- * the state of a button and lights up an LED when pressed.
+ * sets up two buttons and enters an infinite loop where it checks
+ * the state of the buttons and lights up an LED accordingly.
  */
 #[main]
 fn main() -> ! {
-    //test code, ignore for now
-    //esp_println::println!("running");
-
-    let peripherals = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
-
-     
+    esp_println::println!("button input test on the ESP32c6.");
     /*
+     * peripherals initializes the hardware peripherals, specifically the RMT peripheral and GPIO pins
      * delay used later to delay the loop by 500 milliseconds
      * rmt initializes the RMT peripheral with the RMT channel and the clock rate
      * rmt_buffer creates a buffer for controlling the LED strip, stores the LED color data
      * led declares an LED adapter using the RMT peripheral, GPIO pin 8, and the rmt_buffer
      */
+    
+    let peripherals = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
     let delay = Delay::new();
     let rmt = Rmt::new(peripherals.RMT,  Rate::from_mhz(80)).unwrap();
     let mut rmt_buffer = smart_led_buffer!(1);
     let mut led = SmartLedsAdapter::new(rmt.channel0, peripherals.GPIO8, &mut rmt_buffer);
 
-    //declares a single button input, connected to GPIO4
-    let button = Input::new(
+    //declares a red button input, connected to GPIO4
+    let red_button = Input::new(
         peripherals.GPIO4,
+        InputConfig::default().with_pull(Pull::Up) //up means button will read as low when pressed
+    );
+    //declares a blue button input, connected to GPIO5
+    let blue_button = Input::new(
+        peripherals.GPIO5,
         InputConfig::default().with_pull(Pull::Up) //up means button will read as low when pressed
     );
 
     //infinite loop, which checks the state of the button and updates the LED as needed
     loop {
-    //check the state of the button
-    if button.is_low() {
+    //check the state of the red button
+    // if red_button.is_low() {
+    //     let _ = led.write(
+    //         brightness(gamma([RGB8::new(255, 0, 0)].into_iter()), 40,)  
+    //     );
+    //     esp_println::println!("button is down");
+    // } else {
+    //     let _ = led.write(
+    //         brightness(gamma([RGB8::new(0, 0, 0)].into_iter()), 40,)
+    //     );
+    //     esp_println::println!("button is up");
+    // }
+    //check the state of the blue button
+    if blue_button.is_low() && red_button.is_low() { //if both buttons are pressed, turn the LED purple
         let _ = led.write(
-            brightness(gamma([RGB8::new(255, 0, 0)].into_iter()), 40,)  
+            brightness(gamma([RGB8::new(255, 0, 255)].into_iter()), 40,)
         );
-        esp_println::println!("button is down");
-    } else {
+        esp_println::println!("both buttons are down");
+    } 
+    else if blue_button.is_low() {
+        let _ = led.write(
+            brightness(gamma([RGB8::new(0, 0, 255)].into_iter()), 40,)  
+        );
+        esp_println::println!("blue button is down, red button is up");
+    }
+    else if red_button.is_low() { //if the blue button isn't pressed, but the red button is, keep the LED red
+        let _ = led.write(
+            brightness(gamma([RGB8::new(255, 0, 0)].into_iter()), 40,)
+        );
+        esp_println::println!("blue button is up, red button is down");
+    }
+    else {
         let _ = led.write(
             brightness(gamma([RGB8::new(0, 0, 0)].into_iter()), 40,)
         );
-        esp_println::println!("button is up");
+        esp_println::println!("both buttons are up");
     }
         delay.delay_millis(500);
-        esp_println::println!("loop complete, re-looping");
-    }
-
-    /*
-    // Test loop for making sure led is working, disregards any button state
-    loop {
-    let _ = led.write(brightness(gamma([RGB8::new(255, 0, 0)].into_iter()), 20));
-    delay.delay_millis(500);
-
-    let _ = led.write(brightness(gamma([RGB8::new(0, 0, 0)].into_iter()), 20));
-    delay.delay_millis(500);
-    }
-    */
-     
+        //esp_println::println!("loop complete, re-looping");
+    }     
 }
