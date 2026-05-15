@@ -42,6 +42,10 @@ bitflags::bitflags! {
     }
 }
 
+    /* Scans the state of the buttons and returns a Buttons struct 
+     * with the corresponding bits set for each button that is 
+     * pressed.
+     */
     fn scan_inputs (
         red_button: &esp_hal::gpio::Input,
         blue_button: &esp_hal::gpio::Input,
@@ -74,6 +78,9 @@ bitflags::bitflags! {
         state
     }
 
+    /* Maps the button states to an RGB color for the LED on the ESP32 
+     * using the bitflags defined earlier.
+     */
     fn map_inputs(inputs : Buttons) -> RGB8 {
         let mut red = 0;
         let mut green = 0;
@@ -150,6 +157,7 @@ fn main() -> ! {
         InputConfig::default().with_pull(Pull::Up)
     );
 
+    //declares a power button input, connected to GPIO0
     let power_button = Input::new(
         peripherals.GPIO0,
         InputConfig::default().with_pull(Pull::Up)
