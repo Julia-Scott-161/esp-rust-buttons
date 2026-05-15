@@ -999,6 +999,7 @@ checksum = "b1376b15f3ff160e9b1e8ea564ce427f2f6fcf77528cc0a8bf405cb476f9cea7"
 name = "rust-esp-buttons"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "esp-backtrace",
  "esp-bootloader-esp-idf",
  "esp-hal",
